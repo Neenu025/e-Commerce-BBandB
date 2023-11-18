@@ -1,0 +1,211 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<style>
+
+    .dropdown {
+    position: relative;
+    display: inline-block;
+    }
+
+    .dropdown-content {
+    display: none;
+    position: absolute;
+    z-index: 1;
+    }
+
+    .dropdown:hover .dropdown-content {
+    display: block;
+    }
+
+
+
+</style>
+
+<head>
+    <meta charset="utf-8">
+    <title>Orders</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Free HTML Templates" name="keywords">
+    <meta content="Free HTML Templates" name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet"> 
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="{% static 'home/lib/owlcarousel/assets/owl.carousel.min.css' %}" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="{% static 'home/css/style.css' %}" rel="stylesheet">
+</head>
+
+<body>
+    <!-- footer start -->
+    <div class="container-fluid">
+        <div class="row bg-secondary py-2 px-xl-5">
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-dark" href="">FAQs</a>
+                    <span class="text-muted px-2">|</span>
+                    <a class="text-dark" href="">Help</a>
+                    <span class="text-muted px-2">|</span>
+                    <a class="text-dark" href="">Support</a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center text-lg-right">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-dark px-2" href="">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a class="text-dark px-2" href="">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a class="text-dark px-2" href="">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a class="text-dark px-2" href="">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a class="text-dark pl-2" href="">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="row align-items-center py-3 px-xl-5">
+            <div class="col-lg-3 d-none d-lg-block">
+                <a href="{% url 'home' %}" class="text-decoration-none">
+                    <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span>Batter,Butter&Beyond</h5>
+                </a>
+                </a>
+                </a>
+            </div>
+            <div class="col-lg-6 col-6 text-left">
+                <form method ="get" action="{% url 'search' %}">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="q" placeholder="Search for products">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                    </div>   
+                </form>
+            </div>
+            <div class="col-lg-3 col-6 text-right">
+                <div class="dropdown">
+                    <a href="{% url 'edit_profile' %}" class="btn border dropdown-toggle" id="profileDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-user-circle fa-lg text-primary"></i>
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="profileDropdown">
+                      <!-- Dropdown menu items -->
+                      <a class="dropdown-item" href="{% url 'edit_profile' %}">Profile</a>
+                      <a class="dropdown-item" href="{% url 'customer_order' %}">Orders</a>
+                      <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
+                    </div>
+                </div>
+                
+                <a href="{% url 'wishlist' %}" class="btn border">
+                    <i class="fas fa-heart text-primary"></i>
+                    <!-- <span class="badge">0</span> -->
+                </a>
+                <a href="{% url 'cart' %}" class="btn border">
+                    <i class="fas fa-shopping-cart text-primary"></i>
+                    <!-- <span class="badge">0</span> -->
+                </a>
+            </div>
+        </div>
+    </div>
+     <!-- footer end -->
+   
+
+
+
+<div class="table-responsive container mt-5">
+   
+    <table class="table table-sm text-start align-middle table-hover mb-0">
+        <thead>
+            <tr class="text-dark">
+                <th scope="col">Order Id</th>
+                <th scope="col">Product</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Payment Type</th>
+                <th scope="col">Date</th>
+                <th scope="col">Status</th>
+                <th scope="col">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr {% if order.status == 'cancelled' %}style=" background-color: #ffcccc;"{% endif %}>  
+                <td>{{ order.id }}</td>
+                <td>
+                    {% if order.orderitem_set.all %}
+                        {% for order_item in order.orderitem_set.all %}
+                            <div class="mb-2">
+                                <img src="{{ order_item.image.url }}" alt="" width="60">
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="mb-0 fw-normal">No products</p>
+                    {% endif %}
+                
+                <td class="border-bottom-0">
+                    {% if order.orderitem_set.all %}
+                        {% for order_item in order.orderitem_set.all %}
+                            <h6 class="fw-semibold mb-1">
+                                {{ order_item.product.product_name }} (x{{ order_item.quantity }})
+                            </h6>
+                        {% endfor %}
+                    {% else %}
+                        <p class="mb-0 fw-normal">No products</p>
+                    {% endif %}
+                </td>
+                <td>{{ order.amount }}</td>
+                <td>{{ order.payment_type }}</td>
+                <td>{{ order.date }}</td>
+                <td>{{ order.status }}</td>
+                <td>
+                    {% if order.status == 'pending' or order.status == 'processing' %}
+                    <form action="{% url 'cancel_order' order.id %}" method="POST" name="cancel_form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+   
+</div>
+ <!-- Footer Start -->
+{% include 'snippets/footer.html' %}
+<!-- Footer End -->
+
+<a href="#" class="btn btn-primary back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+
+<!-- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'home/lib/easing/easing.min.js' %}"></script>
+<script src="{% static 'home/lib/owlcarousel/owl.carousel.min.js' %}"></script>
+
+<!-- Contact Javascript File -->
+<script src="{% static 'home/mail/jqBootstrapValidation.min.js' %}"></script>
+<script src="{% static 'home/mail/contact.js' %}"></script>
+
+<!-- Template Javascript -->
+<script src="{% static 'home/js/main.js' %}"></script>
+
+</body>
