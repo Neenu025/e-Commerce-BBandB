@@ -21,6 +21,7 @@ urlpatterns = [
     path('addc/',views.add_category,name= 'add_category'),
     path('edit/<int:product_id>/',views.editproduct,name='edit_product'),
     path('product/<int:id>/update/', views.update, name='update'),
+    path('restore/<int:product_id>/',views.restore_product,name='restore_product'),   #for soft delete
     path('product/<int:product_id>/delete/', views.delete_product, name='delete_product'),
     path('customer/<int:customer_id>/block/', views.block_customer, name='block_customer'),
     path('customer/<int:customer_id>/unblock/', views.unblock_customer, name='unblock_customer'),
@@ -40,7 +41,9 @@ urlpatterns = [
 
 
 #user side
-    path('',views.home,name='home'),
+    path('',views.welcome,name='welcome'),
+    path('home', views.home, name='home'),
+    path('about', views.about, name='about'),
     path('login', views.loginPage, name='login'),
     path('logout/',views.logoutPage,name='logout'),
     path('userproduct/',views.userproductpage,name='userproduct'),
@@ -48,8 +51,14 @@ urlpatterns = [
     path('social-auth/', include('social_django.urls', namespace = 'social')),
 
 
+
+
 # app2
     path('', include('SHOPPER.urls')),
+# app3
+    path('', include('banner.urls')),
+# app4
+    path('', include('REPORT.urls')),
 
 
 

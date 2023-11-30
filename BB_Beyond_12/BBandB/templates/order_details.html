@@ -1,0 +1,198 @@
+
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Wishlist</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Free HTML Templates" name="keywords">
+    <meta content="Free HTML Templates" name="description">
+
+    
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet"> 
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="{% static 'home/lib/owlcarousel/assets/owl.carousel.min.css' %}" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="{% static 'home/css/style.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/product.css' %}" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Topbar Start -->
+    <div class="container-fluid">
+        <div class="row bg-secondary py-2 px-xl-5">
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-dark" href="">FAQs</a>
+                    <span class="text-muted px-2">|</span>
+                    <a class="text-dark" href="">Help</a>
+                    <span class="text-muted px-2">|</span>
+                    <a class="text-dark" href="">Support</a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center text-lg-right">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-dark px-2" href="">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a class="text-dark px-2" href="">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a class="text-dark px-2" href="">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a class="text-dark px-2" href="">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a class="text-dark pl-2" href="">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="row align-items-center py-3 px-xl-5">
+            <div class="col-lg-3 d-none d-lg-block">
+                <a href="{% url 'home' %}" class="text-decoration-none">
+                    <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span></h5>
+                </a>
+            </div>
+            <div class="col-lg-6 col-6 text-left">
+                <form method ="get" action="{% url 'search' %}">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="q" placeholder="Search for products">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg-3 col-6 text-right">
+                <div class="dropdown profile1">
+                    <a href="{% url 'edit_profile' %}" class="btn border dropdown-toggle" id="profileDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-user-circle fa-lg text-primary"></i>
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="profileDropdown">
+                      <!-- Dropdown menu items -->
+                      <a class="dropdown-item" href="{% url 'edit_profile' %}">Profile</a>
+                      <a class="dropdown-item" href="{% url 'customer_order' %}">Orders</a>
+                      <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
+                    </div>
+                </div>
+                
+                <a href="{% url 'wishlist' %}" class="btn border">
+                    <i class="fas fa-heart text-primary"></i>
+                    <!-- <span class="badge">0</span> -->
+                </a>
+                <a href="{% url 'cart' %}" class="btn border">
+                    <i class="fas fa-shopping-cart text-primary"></i>
+                    <!-- <span class="badge">0</span> -->
+                </a>
+            </div>
+        </div>
+    </div>
+    <!-- Topbar End -->
+
+<div class="container mt-5">
+    <div class="row">
+        <!-- <div class="col-md-4">
+           
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-user" style="margin-right: 10px;"></i> Account Details</h5>
+                    <hr>
+                    <p class="card-text"><i class="fas fa-key" style="margin-right: 10px;"></i><a href="#" style="color: black;" data-toggle="modal" data-target="#exampleModalLongs">Change password</a></p>
+                    <hr>
+                    <p class="card-text"><i class="fas fa-shopping-cart" style="margin-right: 10px;"></i><a href="{% url 'customer_order' %}" style="color: black;">Orders</a></p>
+                    <hr>
+                  
+                    <hr>
+                    <p class="card-text"><i class="fas fa-credit-card" style="margin-right: 10px;"></i><a href="{% url 'wallet' %}" style="color: black;">Wallet</a></p>
+                    <hr>
+                    
+                    <p class="card-text"><i class="fas fa-sign-out-alt" style="margin-right: 10px;"></i><a href="{% url 'logout' %}" style="color: black;">Logout</a></p>
+                    <hr>
+                </div>
+            </div>
+        </div> -->
+
+
+
+
+
+
+<div class="container">
+    <div class="row">
+        {% for i in orders %}
+
+        <div class="col-sm-8 mt-5"> 
+            <div class="left-side">
+                {% for j in i.orderitem_set.all %}
+                <img src="{{j.image.url}}" alt="Product Image" class="product-image" style="max-width: 100px; max-height: 100px;">
+                <h2>{{j.product.product_name}}</h2>
+                <p>Price: {{j.product.price}}</p>
+                <p>Quantity: {{j.quantity}}</p>
+                <p>Order Date:{{i.date}}</p>
+                <p>Expected Delivery: DD/MM/YYYY</p>
+                
+                <hr>
+                {% endfor %}
+                <div>
+                    {% if i.status == 'cancelled' %}
+                    <label style="color:red">Order cancelled</label>
+                    {% elif i.status != 'delivered' and i.status != 'completed' and  i.status != 'returned'%}
+                    <a href="{% url 'cancel_order' i.order_id %}"><button type="button" class="btn btn-danger btn-lg">Cancel</button></a>
+                    {% endif %}
+                    
+                    {% if i.status == 'delivered' or i.status == 'completed' %}
+                    <a href="{% url 'return_order' i.order_id %}"><button type="button" class="btn btn-danger btn-lg">Return</button></a>
+                    {% endif %}
+              </div>
+                
+                
+                <div>
+                    <br>
+                
+                    
+                    
+                </div>
+            
+                
+            </div>
+        </div>
+        <div class="right-side">
+            <div class="order-summary">
+                <h3>Order Summary</h3>
+                <p>Shipping: 10</p>
+                <p>Subtotal: {{i.amount}}</p>
+                
+                <p>Payment Method: {{i.payment_type}}</p>
+                <p style="color:blue;">Status: {{i.status}}</p>
+            </div>
+            <div class="delivery-address">
+                <h3>Delivery Address</h3>
+                <p>Name: {{i.user.username}}</p>
+                <p>Address: {{i.address.address2}}</p>
+                <p>City: {{i.address.city}}</p>
+                <p>Phone No:{{i.address.number}}</p>
+            </div>
+        </div>
+        
+        {% endfor %}
+        {% comment %} {% endfor %} {% endcomment %}
+    </div>
+</div>

@@ -49,6 +49,12 @@ urlpatterns = [
     path('addcoupon/',views.addcoupon,name='addcoupon'),
 
     path('apply_coupon/', views.apply_coupon, name='apply_coupon'),
+    path('wallet/',views.wallet,name='wallet'),
+    path('order_details/<int:order_id>',views.order_details,name='order_details'),
+
+     #admin order search
+    path('searchorder/',views.searchorder,name='searchorder'),
+
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

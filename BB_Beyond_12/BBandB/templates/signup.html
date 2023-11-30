@@ -21,30 +21,24 @@
     }
         
     </style>
-
-
-
-
-
 </head>
 <body>
     <section class="form my-4 mx-5 ">
-
         <div class="container">
-
              <div class="#">
-                <!-- <div class="col-lg-5">
-
-                    <img src="#" class="img-fluid" alt="">
-
-                </div> --> 
-
                 <div class="col-lg-7 px-5 pt-5 ">
                     <h1 class="font-weight-bold py-4 px-4 text-success">BBandB Sign-up</h1>
                     <!-- <h4 class="px-3 px-4">Sign into your account</h4> -->
                     <form action="" method="post" class="d-flex flex-column gap-4" >
                         {% csrf_token %}
                         <div class="form-row">
+                            {% if messages %}
+                            <ul class="messages text-danger">
+                                {% for message in messages %}
+                                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
                             <div class="col-lg-7">
                                 <input type="text" placeholder="Enter your Username" name="username" class="form-control">
                             </div>
@@ -77,13 +71,13 @@
                             <div class="col-lg-7">
                                 <input type="Password" placeholder="Confirm your Password" name="password2" class="form-control">
 
-                            {% if messages %}
+                            <!-- {% if messages %}
                                 <ul class="messages text-danger">
                                     {% for message in messages %}
                                         <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
                                     {% endfor %}
                                 </ul>
-                            {% endif %}
+                            {% endif %} -->
 
                             </div>
     

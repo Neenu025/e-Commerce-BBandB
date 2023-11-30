@@ -1,33 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import FileExtensionValidator
 from .manager import UserManager
 
+
 # Create your models here.
-
-##for softdelete##
-
-# class NonDeleted(models.Manager):
-#     def get_queryset(self):
-#         return super().get_queryset().filter(is_deleted = False)
-        
-
-# class SoftDelete(models.Model):
-#     is_deleted = models.BooleanField(default=True)
-
-#     everything = models.Manager()
-#     objects = NonDeleted()
-
-
-#     def soft_delete(self):
-#         self.is_deleted = True
-#         self.save()
-
-#     def restore(self):
-#         self.is_deleted = False
-#         self.save()
-    
-#     class Meta:
-#         abstract = True
 
 
 class Customer(AbstractUser):
@@ -42,6 +19,9 @@ class Customer(AbstractUser):
     profile_photo      =   models.ImageField(upload_to='products', null=True, blank=True)
     referral_code      =   models.CharField(max_length=100,null=True, unique=True)
     referral_amount    =   models.IntegerField(default=0)
+    wallet_bal         =   models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+
 
     objects = UserManager()
     USERNAME_FIELD = 'email'
@@ -55,10 +35,10 @@ class Customer(AbstractUser):
 
 
 class Category(models.Model):
-    category_name               =     models.CharField(max_length=100,null=True)
+    category_name               =     models.CharField(max_length=100, unique=True, blank=False)
     description                 =     models.CharField(max_length=1000,default='')
-    image                       =     models.ImageField(upload_to='products',null=True)
-    category_offer_description  =     models.CharField(max_length=100, null=True, blank=True)
+    image                       =     models.ImageField(upload_to='products', validators=[FileExtensionValidator(['jpg', 'jpeg', 'png'])])
+    category_offer_description  =     models.CharField(max_length=100, blank=True)
     category_offer              =     models.PositiveBigIntegerField(default=0, null=True, blank=True)
     
     
@@ -72,15 +52,15 @@ class Product(models.Model):
         
     # )
    
-    product_name                =     models.CharField(max_length=100)
+    product_name                =     models.CharField(max_length=100, unique=True)
     description                 =     models.CharField(max_length=1000,default='')
     category                    =     models.ForeignKey(Category, on_delete=models.CASCADE)
     stock                       =     models.IntegerField(default=0)
     price                       =     models.IntegerField(default=0)
-    image                       =     models.ImageField(upload_to='products')
+    image                       =     models.ImageField(upload_to='products', validators=[FileExtensionValidator(['jpg', 'jpeg', 'png'])])
     product_offer               =     models.PositiveBigIntegerField(default=0,null=True, blank=True)
     deleted                     =     models.BooleanField(default=False)
-    # variant                     =     models.CharField(max_length=20,choices=VARIANTS, default=None)
+    # variant                   =     models.CharField(max_length=20,choices=VARIANTS, default=None)
 
  
 
@@ -99,4 +79,8 @@ class Product(models.Model):
 
 class Type(models.Model):
     name = models.CharField(max_length=25)
+
+
+
+
     

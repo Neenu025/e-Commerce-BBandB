@@ -1,6 +1,6 @@
 
 from django.shortcuts import render,redirect,get_object_or_404,HttpResponse
-from .models import Cart,Product,Customer,Order,Address,Images,OrderItem,Wishlist,Coupon
+from .models import Cart,Product,Customer,Order,Address,Images,OrderItem,Wishlist,Coupon,Wallet
 from APP1.models import Category
 from django.db.models import F,Sum
 from django.http import Http404
@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 import json
+from decimal import Decimal
 from django.http import Http404,JsonResponse
 import secrets
 import smtplib
@@ -16,6 +17,10 @@ from django.contrib.auth import login
 from django.contrib.auth import get_user_model
 from django.db.models import Case, When, Sum,DecimalField
 from django.contrib.auth.models import AnonymousUser
+from django.db import IntegrityError
+from django.db import models
+from django.db.models import Q
+
 
 
 
@@ -28,12 +33,15 @@ def cart(request):
     if isinstance(request.user, AnonymousUser):
         device_id = request.COOKIES.get('device_id')
         cart_items = Cart.objects.filter(device=device_id).order_by('id')
+
+        subtotal = 0
+        discounted_cate_price = None
+        discounted_prod_price = None
+        total_dict = {}
     else:
         user = request.user
         cart_items = Cart.objects.filter(user=user).order_by('id')
-
-        
-        subtotal = 0
+        subtotal=0
         discounted_cate_price = None
         discounted_prod_price = None
         total_dict = {}
@@ -89,7 +97,7 @@ def cart(request):
 
 
 @never_cache
-@cache_control(no_cache=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,no_store=True)
 
 def add_to_cart(request, product_id):
     try:
@@ -143,10 +151,15 @@ def remove_from_cart(request, cart_item_id):
 @never_cache
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 def checkout(request):
-    if 'email' in request.session:
+
+    if 'email' not in request.session:
+       return redirect('login')
+    
+    else: 
         user = request.user
         cart_items = Cart.objects.filter(user=user)
         subtotal=0
+        
         for cart_item in cart_items:
             
             if cart_item.product.category.category_offer:
@@ -178,14 +191,14 @@ def checkout(request):
             'addresses'        :  addresses,
             'discount_amount'  :  discount,
             'itemprice2'       :  itemprice2,
-            # 'total_price'      :  total_price,
+           
 
         
             
         }
         return render(request, 'checkout.html', context)
-    else:
-        return redirect ('signup')
+    # else:
+    #     return redirect ('signup')
 
     
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
@@ -238,11 +251,35 @@ def edit_profile(request):
         if profile_photo:
             customer.profile_photo.save(profile_photo.name, profile_photo, save=True)
 
+
+        if not customer.username.strip():
+            messages.error(request, 'Username can not be empty or contain only spaces')
+            return redirect('edit_profile')
+
+        if Customer.objects.exclude(id=request.user.id).filter(email=customer.email).exists():
+            messages.error(request, 'A profile with this email already exists   .')
+            return redirect('edit_profile')
+        
+        if len(customer.number) < 10:
+            messages.error(request, 'Mobile number should have at least 10 digits.')
+            return redirect('edit_profile')
+        
+        if not customer.email.strip():
+            messages.error(request, 'Username can not be empty or contain only spaces')
+            return redirect('edit_profile')
+               
+
         if password:
-            customer.set_password(password)    
-        customer.save()
-        messages.success(request,'Updated successfully')
-        return redirect('edit_profile')
+            customer.set_password(password)
+
+        try:  
+            customer.save()
+            messages.success(request,'Updated successfully')
+            return redirect('edit_profile')
+        
+        except IntegrityError:
+            messages.error(request, 'A profile with this email already exists.')
+            return redirect('edit_profile')
     
         
    
@@ -368,13 +405,14 @@ def order(request):
         paginator = Paginator(orders, per_page=10) 
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
-        
+        print(order)
         context = {
             'orders': page_obj,
         }
         return render(request, 'orders.html', context)
     else:
         return redirect('admin')
+        
 
 
 def updateorder(request):
@@ -387,6 +425,10 @@ def updateorder(request):
             order = Order.objects.get(id=order_id)
         except Order.DoesNotExist:
             return redirect('order')  
+        
+        if order.status == 'cancelled':
+            messages.error(request, 'Cancelled orders cannot have their status updated.')
+            return redirect('order')
 
       
         order.status = status
@@ -398,6 +440,13 @@ def updateorder(request):
         return redirect('order') 
 
     return redirect('admin')
+
+def restock_products(order):
+    order_items = OrderItem.objects.filter(order=order)
+    for order_item in order_items:
+        product = order_item.product
+        product.stock += order_item.quantity
+        product.save()
 
 
 def wishlist(request):
@@ -451,17 +500,59 @@ def remove_from_wishlist(request, wishlist_item_id):
     
     return redirect('wishlist')
 
+from decimal import Decimal
 
-def cancel_order(request,order_id):
-    if request.method == 'POST':
-        try:
-            order = Order.objects.get(id=order_id)
-            order.status = 'cancelled'
-            order.save()
-        except Order.DoesNotExist:
-            pass  
+def cancel_order(request, order_id):
+    # Assuming you have a way to get the customer associated with the order
+    order = Order.objects.get(id=order_id)
+    usercustm = order.user  # Adjust this line based on your model relationships
 
-    return redirect('customer_order')
+    if order.status not in ('completed', 'delivered', 'shipped') and order.payment_type == 'cod':
+        wallet = Wallet.objects.create(
+            user=usercustm,  # Use the customer associated with the order
+            order=order,
+            amount=order.amount,
+            status='Credited',
+        )
+        wallet.save()
+
+        # Update user's wallet balance
+        Order_item_amount = Decimal(order.amount)
+        usercustm.wallet_bal += Order_item_amount
+        usercustm.save()
+
+    elif order.status not in ('completed', 'delivered', 'shipped') and order.payment_type == 'razorpay':
+        wallet = Wallet.objects.create(
+            user=usercustm,  # Use the customer associated with the order
+            order=order,
+            amount=order.amount,
+            status='Credited',
+        )
+        wallet.save()
+
+        # Update user's wallet balance
+        Order_item_amount = Decimal(order.amount)
+        usercustm.wallet_bal += Order_item_amount
+        usercustm.save()
+
+    restock_products(order)
+
+    # Update order status
+    order.status = 'cancelled'
+    order.save()
+
+    return redirect('order_details', order_id)
+
+
+
+
+def order_details(request,order_id): 
+    orders = Order.objects.filter(id=order_id)
+    context ={
+         'orders':orders,
+        }
+    return render(request,'order_details.html',context)
+
 
 def forgot_password(request):
     if request.method == 'POST':
@@ -642,9 +733,10 @@ def customer_order(request):
 def proceedtopay(request):
     cart = Cart.objects.filter(user=request.user)
     total = 0
-    shipping = 10
+    shipping = 80
     subtotal=0
     for cart_item in cart:
+
         
         if cart_item.product.category.category_offer:   
             itemprice2=(cart_item.product.price - (cart_item.product.price * cart_item.product.category.category_offer/100)) * cart_item.quantity
@@ -695,13 +787,13 @@ def razorpay(request,address_id):
             itemprice=(cart_item.product.price)*(cart_item.quantity)
             
             subtotal=subtotal+itemprice
-    shipping_cost = 10 
+    shipping_cost = 80 
     total = subtotal + shipping_cost if subtotal else 0
     
     discount = request.session.get('discount', 0)
     
     if discount:
-        total -= discount 
+        total -= round(discount)
 
    
    
@@ -750,13 +842,29 @@ def coupon(request):
 def addcoupon(request):
     if request.method == 'POST':
         coupon_code    = request.POST.get('Couponcode')
-        discount_price  = request.POST.get('dprice')
+        discount_price  = request.POST.get('dprice', '0')
         minimum_amount = request.POST.get('amount')
-        
-        coupon = Coupon(coupon_code=coupon_code, discount_price=discount_price, minimum_amount=minimum_amount)
-        coupon.save()
 
-        return redirect('coupon')
+        try:
+            discount_price = float(discount_price)
+        except ValueError:
+            discount_price = 0
+
+        if discount_price <= 0:
+            messages.error(request, 'Discounted price must be greater than zero')
+            return redirect('addcoupon')
+        print(messages)
+
+        try:
+        
+            coupon = Coupon(coupon_code=coupon_code, discount_price=discount_price, minimum_amount=minimum_amount)
+            coupon.save()
+        
+        except IntegrityError:
+            messages.error(request, 'An error occured while adding the coupon code.')
+            return redirect('coupon')
+
+    return redirect('coupon')
     
 
 def apply_coupon(request):
@@ -772,7 +880,7 @@ def apply_coupon(request):
         user = request.user
         cart_items = Cart.objects.filter(user=user)
         subtotal = 0
-        shipping_cost = 10
+        shipping_cost = 80
         total_dict = {}
         coupons = Coupon.objects.all()
 
@@ -934,6 +1042,42 @@ def admin_order_details(request,order_id):
     }
 
     return render(request, 'admin_order_details.html', context)
+
+def wallet(request):
+    user=request.user
+    customer=Customer.objects.get(email=user)
+    wallets= Wallet.objects.filter(user=user).order_by('-created_at')
+   
+    context = {
+        'customer':customer,
+        'wallets': wallets,
+    }
+    return render(request, 'wallet.html', context)
+
+@never_cache
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def searchorder(request):
+  
+    query = request.GET.get('q', '')
+    print(query)
+
+    if query:
+        # Perform a case-insensitive search on product names and descriptions
+        orders = Order.objects.filter(
+            models.Q(user__username__icontains=query)
+           
+        )
+        # Set search_results to products filtered by the query
+        search_results = orders
+       
+    
+
+    context = {
+        'orders': orders,
+        'search_results': search_results,
+    }
+
+    return render(request, 'ordersearch.html', context)
 
 
 

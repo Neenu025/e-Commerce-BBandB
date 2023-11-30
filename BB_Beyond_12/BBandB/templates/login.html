@@ -22,21 +22,14 @@
 
 
 </head>
-
 <body>
   <section class="form my-4 mx-5 ">
 
     <div class="container">
 
       <div class="#">
-        <!-- <div class="col-lg-5">
-
-                    <img src="#" class="img-fluid" alt="">
-
-                </div> -->
-
         <div class="col-lg-7 px-5 pt-5 ">
-          <h1 class="font-weight-bold py-4 px-4 text-success">BBandB</h1>
+          <h1 class="font-weight-bold py-4 px-4 text-success">Welcome to BBandB</h1>
           <!-- <h4 class="px-3 px-4">Sign into your account</h4> -->
           <form action="" method="post">
             <div>
@@ -47,9 +40,9 @@
 
                   <ul class="messages">
                     {% for message in messages %}
-                    <li{% if message.tags %} class="{{ message.tags }}" {% endif %} style="color: white;">{{ message }}
+                    <li{% if message.tags %} class="{{ message.tags }}" {% endif %} style="color: rgb(182, 22, 22);">{{ message }}
                       </li>
-                      {% endfor %}
+                      {% endfor %}                      
                   </ul>
                   <script>
                     setTimeout(function () {
@@ -133,7 +126,7 @@
           </button> -->
         </div>
         <div class="modal-body">
-          <form method="post" action="#">
+          <form method="post" action="{% url 'forgot_password' %}">
             {% csrf_token %}
             <div class="form-group">
               <label for="email">Enter your email:</label>

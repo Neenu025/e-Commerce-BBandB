@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>edit_category</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.5.0/css/bootstrap.min.css">
     
@@ -41,41 +41,12 @@
 </head>
 <body>
     <div class="container-xxl position-relative bg-white d-flex p-0">
-       
+        <!-- Sidebar Start -->
         <div class="sidebar pe-4 pb-3">
-            <nav class="navbar bg-light navbar-light">
-                <a href="index.html" class="navbar-brand mx-4 mb-3">
-                    <h3 class="text-success"><i class="#"></i>BBandB</h3>
-                </a>
-                <div class="d-flex align-items-center ms-4 mb-4">
-                    <div class="position-relative">
-                        <img class="rounded-circle" src="{% static 'admin/img/adm.png' %}" alt="" style="width: 40px; height: 40px;">
-                        <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
-                    </div>
-                    <div class="ms-3">
-                        <h6 class="mb-0">Neenu</h6>
-                        <span>Admin</span>
-                    </div>
-                </div>
-                <div class="navbar-nav w-100">
-                    <a href="{% url 'dashboard' %}" class="nav-item nav-link "><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
-                    <div class="nav-item dropdown">
-                        <!-- <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-laptop me-2"></i>Elements</a> -->
-                        <div class="dropdown-menu bg-transparent border-0">
-                            <a href="button.html" class="dropdown-item">Buttons</a>
-                            <a href="typography.html" class="dropdown-item">Typography</a>
-                            <a href="element.html" class="dropdown-item">Other Elements</a>
-                        </div>
-                    </div>
-                    <a href="{% url 'customer' %}" class="nav-item nav-link"><i class="fa fa-th me-2"></i>customer</a>
-                    <a href="#" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Orders</a>
-                    <a href="{% url 'products' %}" class="nav-item nav-link active"><i class="fa fa-table me-2"></i>Products</a>
-                    <a href="{% url 'category' %}" class="nav-item nav-link"><i class="fa fa-chart-bar me-2"></i>Category</a>
-                   
-                </div>
-            </nav>
+            {% include 'snippets/admin_sidebar.html' %}
         </div>
         <!-- Sidebar End -->
+    
 
 
         <!-- Content Start -->
@@ -106,8 +77,10 @@
                     </div>
                 </div>
             </nav>
+            
+
             <!-- edit -->
-            <div id="#" class="">
+            <div id="" class="">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <form action="{% url 'update_category' category.id %}"  method="post" enctype="multipart/form-data">
@@ -118,6 +91,11 @@
                             </div>
                             <div class="modal-body">					
                                 <div class="form-group">
+                                    {% if error_message %}
+                                    <div class="alert alert-danger">
+                                        {{ error_message }}
+                                    </div>
+                                    {% endif %}
                                     <label>Category_name</label>
                                     <input name="category_name" type="text" class="form-control" value="{{ category.category_name }}"  required>
                                 </div>
@@ -133,7 +111,7 @@
 
                                 <div class="form-group">
                                     <label>Offer price</label>
-                                    <input name="offer_price" type="text" class="form-control"  value= "{{ category.category_offer  }}" required>
+                                    <input name="offer_price" type="text" class="form-control"  value= "{{ category.category_offer }}">
                                 </div>
                                 
                                 <div class="form-group">

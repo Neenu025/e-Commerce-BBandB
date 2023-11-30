@@ -83,12 +83,12 @@
         <div class="row align-items-center py-3 px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a href="" class="text-decoration-none">
-                    <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span>Batter,Butter&Beyond</h5>
+                    <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span></h5>
                 </a>
                 </a>
             </div>
             <div class="col-lg-6 col-6 text-left">
-                <form action="">
+                <form form method ="get" action="{% url 'search' %}">
                     <div class="input-group">
                         <input type="text" class="form-control" placeholder="Search for products">
                         <div class="input-group-append">
@@ -271,8 +271,41 @@
                     </div>
                     <div class="card-body">
                         <h5 class="font-weight-medium mb-3">Products</h5>
+
+                        
                         {% for cart_item in cart_items %}
                         <div class="d-flex justify-content-between">
+                            <!-- First Column -->
+                            <div style="flex: 12; text-align: left;">
+                                <p>{{ cart_item.product.product_name }}</p>
+                            </div>
+                        
+                            <!-- Second Column -->
+                            <div class="col-lg-5">
+                                {% if cart_item.product.category.category_offer %}
+                                    {% with offer_price=cart_item.product.price|add:'-'|add:cart_item.product.category.category_offer %}
+                                        <p>₹{{ cart_item.product.price }} - (%{{ cart_item.product.category.category_offer }})</p>
+                                    {% endwith %}
+                                {% elif cart_item.product.product_offer %}
+                                    {% with offer_price=cart_item.product.price|add:'-'|add:cart_item.product.category.category_offer %}
+                                        <p>₹{{ cart_item.product.price }} - {{cart_item.product.product_offer}}%</p>
+                                    {% endwith %}
+                                {% else %}
+                                    <p>₹{{ cart_item.product.price }}</p>
+                                {% endif %}
+                            </div>
+                        
+                            <!-- Third Column -->
+                            <div class="col-lg-2">
+                                <p>x {{ cart_item.quantity }}</p>
+                            </div>
+                        </div>
+
+
+
+
+
+                        <!-- <div class="d-flex justify-content-between">
                             <p>{{ cart_item.product.product_name }}</p>
                             {% if cart_item.product.category.category_offer %}
 
@@ -290,7 +323,7 @@
                                 <p>₹{{ cart_item.product.price }}</p>
                             {% endif %}
                             <p>x {{ cart_item.quantity }}</p>
-                        </div>
+                        </div> -->
                         {% endfor %}
 
 

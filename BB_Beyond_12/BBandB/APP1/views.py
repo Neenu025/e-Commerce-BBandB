@@ -4,22 +4,31 @@ from django.shortcuts import render
 from django.shortcuts import render,redirect,HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate,login,logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.cache import cache_control,never_cache
-from .models import Customer,Product,Category
-from django.contrib import messages,auth
-from SHOPPER.models import *
-import secrets
-import smtplib
+from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ValidationError
+from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator
-from django.core.exceptions import ObjectDoesNotExist
-import json
+from .models import Customer,Product,Category
+from django.contrib import messages,auth
+from django.db import IntegrityError
 from django.db.models import F,Sum
-import uuid
+from SHOPPER.models import *
+from decimal import Decimal, InvalidOperation
+
+from PIL import Image
+
 import string,random
+import json 
+import uuid
 import psycopg2
 import re
+import secrets
+import smtplib
+
 
 
 
@@ -28,40 +37,53 @@ def loginPage(request):
     context = {
         'messages': messages.get_messages(request)
     }
-    if 'email' and 'otp' in request.session:
+
+    # Check if the user is already logged in
+    if 'email' in request.session and 'otp' in request.session:
         request.session.flush()
         return redirect('login')
     
     if 'email' in request.session:
-        return redirect('home')
+        return redirect('welcome')
     
     if 'admin' in request.session:
         return redirect('admin')
     
-    
-    else:
-        if request.method == 'POST':
-            email     =  request.POST.get('email')
-            password  =  request.POST.get('pass')
-            user      =  authenticate( request,email = email, password = password )
+    # Process login attempt
+    if request.method == 'POST' and 'google-oauth2' not in request.POST :
+        email = request.POST.get('email')
+        password = request.POST.get('pass')
+
+        # Check if both email and password are provided
+        if not email or not password:
+            messages.error(request, "Please provide both email and password.")
+            return render(request, 'login.html', context)
+
+        try:
+            user = authenticate(request, email=email, password=password)
 
             if user is not None:
-            
                 request.session['email'] = email
-                login(request,user)
-                return redirect('home')
+                login(request, user)
+                return redirect('welcome')
             else:
-               messages.error(request,"username or password is not same")
-               return render(request, 'login.html') 
-        else:
-            return render (request,'login.html',context) 
+                messages.error(request, "Username or password is incorrect.")
+                return render(request, 'login.html', context)
+            
+        except IntegrityError as e:
+            if 'google-oauth2' in request.POST:
+                messages.error(request, "IntegrityError: This email is already in use.")
+                return render(request, 'login.html', context)
+
+    else:
+        return render(request, 'login.html', context)
         
 
 
 @never_cache
 def signupPage(request):
     if 'email' in request.session:
-        return redirect('home')
+        return redirect('welcome')
 
     if request.method == 'POST':
         email     =    request.POST.get('email')
@@ -71,18 +93,8 @@ def signupPage(request):
         pass2     =    request.POST.get('password2')
         refferal  =    request.POST.get('refferal')
 
-        # email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$'
-
-        # if re.match(email_regex, email):
-        #     return redirect('signup')
-        # if not re.match(email_regex, email):
-        #     # Email is not valid, return an error
-        #     messages.error(request, 'Invalid email address')
-        #     return redirect('signup')
-
-        
     
-        if not email or not username or not pass1 or not pass2:
+        if not email or not username or not pass1 or not pass2 or not number:
             messages.error(request, 'Please input all the details.')
             return redirect('signup')
 
@@ -98,6 +110,16 @@ def signupPage(request):
             messages.error(request, 'Username already taken.')
             return redirect('signup')
         
+        if len(number) < 10:
+            messages.error(request, 'Mobile number should have at least 10 digits.')
+            return redirect('signup')
+        
+        if not username.strip():
+            messages.error(request, 'Username can not be empty or contain only spaces')
+            return redirect('signup')
+        
+        
+
 
         message = generate_otp()
         sender_email = "roffyjose@gmail.com"
@@ -114,15 +136,21 @@ def signupPage(request):
         except smtplib.SMTPAuthenticationError:
             messages.error(request, 'Failed to send OTP email. Please check your email configuration.')
             return redirect('signup')
+        
         referral_codes = generate_referral_code()
-        user = Customer.objects.create_user(username=username, password=pass1, email=email,number=number,referral_code=referral_codes)
-        user.save()
 
+        try:
+            user = Customer.objects.create_user(username=username, password=pass1, email=email,number=number,referral_code=referral_codes)
+            user.save()
 
-        request.session['email'] =  email
-        request.session['otp']   =  message
-        messages.success (request, 'OTP is sent to your email')
-        return redirect('verify_signup')
+            request.session['email'] =  email
+            request.session['otp']   =  message
+            messages.success (request, 'OTP is sent to your email')
+            return redirect('verify_signup')
+    
+        except IntegrityError:
+            messages.error(request, 'An account with this email already exists.')
+            return redirect('signup')
 
     return render(request, 'signup.html')
 
@@ -170,7 +198,7 @@ def verify_signup(request):
                 for item in cart_items:
                     item.user = user
                     item.save()
-            response = redirect('home')
+            response = redirect('welcome')
             response.delete_cookie('device_id')
             return response
         else:
@@ -182,6 +210,31 @@ def verify_signup(request):
         
     return render(request,'verify_otp.html',context)
 
+def is_valid_image(file):
+    try:
+        image = Image.open(file)
+
+        allowed_formats = ['JPEG', 'JPG', 'PNG']
+        if image.format.upper() not in allowed_formats:
+            raise ValidationError("Invalid image format. Please upload a JPEG, JPG, or PNG file.")
+    except IOError:
+        raise ValidationError("Not a valid image file. Please upload a valid image.")
+
+    except Exception as e:
+        raise ValidationError("Error processing the image file: {}".format(str(e)))
+
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
+@never_cache
+def welcome(request):
+   
+    categories =  Category.objects.all()
+    for category in categories:
+        category.product_count = category.product_set.count()
+    context    =  {
+            'categories':categories
+        }
+    return render(request,'home_new/index.html',context)
 
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
@@ -201,14 +254,17 @@ def logoutPage(request):
     if 'email' in request.session:
         request.session.flush()
     logout(request)
-    return redirect('home')
+    return redirect('welcome')
 
+@never_cache    
+def about(request):
+    return render(request,'home_new/about.html')
     
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
 def admin_login(request):
     if 'email' in request.session:
-        return redirect('home')
+        return redirect('welcome')
     elif 'admin' in request.session:
         return redirect('dashboard')
     else:
@@ -226,14 +282,27 @@ def admin_login(request):
                 return render(request, 'admin_login.html') 
         else:
              return render (request,'admin_login.html')
-
+        
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
 def dashboard(request):
+    orders = Order.objects.order_by('-id')[:5]
+    labels = []
+    data = []
+    for order in orders:
+        labels.append(str(order.id))
+        data.append(order.amount)
+    context = {
+        'labels': json.dumps(labels),
+        'data': json.dumps(data),
+    }
+
     if 'admin' in request.session:
-        return render(request,'dashboard.html')
+        return render(request,'dashboard.html',context)
     else:
         return redirect('admin')
+
+
 
 @never_cache   
 def admin_logout(request):
@@ -296,16 +365,58 @@ def add_product(request):
             price          =  request.POST.get('price')
             offer          =  request.POST.get('offer')
             image          =  request.FILES.get('image')  
-
             images         =  request.FILES.getlist('mulimage')
             
+           
             if not (product_name and description and category_name and price and image and stock):
                 error_message = "Please fill in all the required fields."
-                
-                categories = Category.objects.all()
-                context = {'categories': categories, 'error_message': error_message}
-                return render(request, 'add_product.html', context)
 
+
+            elif not product_name.strip():
+                error_message = "Product name cannot be empty or contain only spaces."
+
+            elif not description.strip():
+                error_message = "Description cannot be empty or contain only spaces."
+
+            elif Product.objects.filter(product_name=product_name).exists():
+                error_message = "A product with the same name already exists."
+                       
+            elif not stock.isdigit() or int(stock) < 0:
+                error_message = "Stock value must be a non-negative integer."
+            
+            elif image:
+                allowed_formats = ['image/jpeg', 'image/jpg', 'image/png']
+                if image.content_type not in allowed_formats:
+                    error_message = "Only JPG, JPEG, and PNG format images are allowed."
+                    # context = {'category': category, 'error_message': 'Only JPG, JPEG, and PNG format images are allowed.'}
+                    # return render(request, 'add_product.html', context)
+                    
+            elif not offer:
+                    offer = '0'       
+            try:
+                    offer = Decimal(offer)
+            except InvalidOperation:
+                    error_message = "Offer must be a numeric value. Enter 0 if no offer applicable "
+           
+
+
+
+            if 'error_message' in locals():
+                categories = Category.objects.all()
+                context = {
+                    'categories': categories,
+                    'error_message': error_message,
+                    'product_name': product_name,
+                    'description': description,
+                    'category_name': category_name,
+                    'stock': stock,
+                    'price': price,
+                    'offer': offer,
+                    'image': image,
+        
+                }
+                return render(request, 'add_product.html', context)
+            
 
             
             product = Product()
@@ -328,30 +439,11 @@ def add_product(request):
         return redirect('admin')
 
 
-
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache    
 def userproductpage(request):
   
-    # results = Product.objects.all().order_by('id')
-    # categories =  Category.objects.all()
-
-    # total_product_count = Product.objects.count()
-    # selected_categories = request.GET.getlist('category')
-    # if selected_categories:
-    #     results = results.filter(category__category_name__in=selected_categories)
-
-
-    # sort_option = request.GET.get('sort') 
-    # if sort_option == 'high':
-    #     for category_name in selected_categories:
-    #         results = results.filter(category__name=category_name).order_by(F('price').desc())
-    # elif sort_option == 'all':
-    #     for category_name in selected_categories:
-    #         results = results.filter(category__name=category_name).order_by('price')
-
-
-    results = Product.objects.all().order_by('id')
+    results = Product.objects.filter(deleted=False).order_by('id')
     categories = Category.objects.all()
 
     total_product_count = Product.objects.count()
@@ -374,13 +466,6 @@ def userproductpage(request):
 
    
         results = [result for category_results in results_by_category.values() for result in category_results]
-
-
-    # sort_option = request.GET.get('sort')
-    # if sort_option == 'high':
-    #     results = results.order_by(F('price').desc())
-    # elif sort_option=='all':
-    #     results = results.order_by('price') 
     
 
     paginator = Paginator(results, 9)
@@ -414,10 +499,6 @@ def userproductpage(request):
         response.set_cookie('device_id', device_id)
         return response
     return render(request, 'userproduct.html', context)
-   
-
-
-
 
 
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
@@ -437,6 +518,9 @@ def category(request):
         return render(request, 'category.html', context)
     else:
         return redirect('admin')
+    
+
+
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache          
 def add_category(request):
@@ -446,19 +530,41 @@ def add_category(request):
             description         =   request.POST['description']
             image               =   request.FILES.get('image')
             offer_description   =   request.POST['offer_details']
-            offer_price         =   request.POST['offer_price']
+            offer_price         =   request.POST.get('offer_price','')
 
+            if not category_name.strip():
+                return render(request, 'add_category.html', {'error_message': 'Category name can not be empty or contain only spaces'})
+            
+            if not description.strip():
+                return render(request, 'add_category.html', {'error_message': 'Description can not be empty or contain only spaces'})
 
-            category = Category.objects.create(
-                category_name                =  category_name,
-                description                  =  description,
-                image                        =  image,
-                category_offer_description   =  offer_description,
-                category_offer               =  offer_price
-            )
-            category.save() 
+            if Category.objects.filter(category_name=category_name).exists():
+                return render(request, 'add_category.html', {'error_message': 'Category with this name already exists.'})
+            
+            if image:
+                allowed_formats = ['image/jpeg', 'image/jpg', 'image/png']
+                if image.content_type not in allowed_formats:
+                    return render(request, 'add_category.html',{'error_message': 'Only JPG, JPEG, and PNG format images are allowed.'})
 
-            return redirect('category')  
+            if offer_price:
+                    offer_price = Decimal(offer_price)
+            else:
+                    offer_price = '0'        
+                    
+            try:
+                category = Category.objects.create(
+                    category_name                =  category_name,
+                    description                  =  description,
+                    image                        =  image,
+                    category_offer_description   =  offer_description,
+                    category_offer               =  offer_price
+                )
+                category.save() 
+                return redirect('category')
+            except IntegrityError:
+                return render(request, 'add_category.html', {'error_message': 'An error occurred while adding the category. Please try again.'})
+ 
+         
         return render(request, 'add_category.html') 
     else:
         return redirect ('admin')
@@ -470,15 +576,19 @@ def add_category(request):
 def editproduct(request, product_id):
     if 'admin' in request.session:
         try:
-            product = Product.objects.get(id=product_id)
+            product = Product.objects.get(id=product_id)           
+
         except Product.DoesNotExist:
         
             return render(request, 'product_not_found.html')
         
         categories = Category.objects.all()
+        selected_category = product.category.category_name if product.category else None
+
         context = {
             'product'    : product,
             'categories' : categories,
+            'selected_category': selected_category,
         }
 
         return render(request, 'editproduct.html', context)
@@ -489,6 +599,7 @@ def editproduct(request, product_id):
 @never_cache  
 def update(request, id):
     product = Product.objects.get(id=id)
+         
     if request.method == 'POST':
         product.product_name    =   request.POST.get('product_name')
         product.description     =   request.POST.get('description')
@@ -500,29 +611,91 @@ def update(request, id):
         product.product_offer   =   request.POST.get('offer')
         image                   =   request.FILES.get('image')
         images                  =   request.FILES.getlist('mulimage')
+        
+
+        categories = Category.objects.all()
+        selected_category = product.category.category_name if product.category else None
+
+     
 
         if image:
+            allowed_formats = ['image/jpeg', 'image/jpg', 'image/png']
+            if image.content_type not in allowed_formats:
+                context = {'product': product,'categories' : categories,'selected_category':selected_category, 'error_message': 'Only JPG, JPEG, and PNG format images are allowed.'}
+
+                return render(request, 'editproduct.html', context)
+
+        if Product.objects.exclude(id=product.id).filter(product_name=product.product_name).exists():
+            context = {'product': product,'categories' : categories,'selected_category':selected_category, 'error_message': 'Product with this name already exists.'}
+        
+        if ' ' in product.product_name:
+            context = {'product': product,'categories' : categories,'selected_category':selected_category, 'error_message': 'Enter a valid name, avoid keeping only spaces.'}
+            return render(request, 'editproduct.html', context)
+        
+        if ' ' in product.description :
+            context = {'product': product,'categories' : categories,'selected_category':selected_category,'error_message': 'Enter a valid description, avoid keeping only spaces.'}
+            return render(request, 'editproduct.html', context)
+        
+        if not product.product_offer :
+             context = {'product': product,'categories' : categories,'selected_category':selected_category, 'error_message': 'Offer price cannot be empty. If not applicable, enter 0.'}
+             print(selected_category)
+             return render(request, 'editproduct.html', context)
+           
+        
+    
+        
+        product.product_name = request.POST.get('product_name')
+        product.description = request.POST.get('description')
+        image = request.FILES.get('image')
+        product.product_offer = request.POST.get('offer', '')
+        category_name         = request.POST.get('category')
+        product.category      = category
+        
+        if image:
             product.image = image
+
+        
         product.save()
+
+        print(selected_category)
+        
             
         return redirect('products') 
     else:
         context = {
-            'product': product
+            'product': product,
+            'categories': categories,
+            'selected_category': selected_category,
+
         }
     return render(request, 'products.html', context)
+         
 
 
-
+@user_passes_test(lambda u: u.is_staff, login_url='admin')
 def delete_product(request, product_id):
     try:
+        # products = Product.objects.filter(deleted=False)
         product = Product.objects.get(id=product_id)
         product.deleted = True
         product.save()
+        
     except Product.DoesNotExist:
         return render(request, 'product_not_found.html')
 
     
+    return redirect('products')
+
+
+def restore_product(request, product_id):
+    try:
+        product = Product.objects.get(id=product_id)
+        product.deleted = False  # Set the deleted field back to False
+        product.save()
+        
+    except Product.DoesNotExist:
+        return render(request, 'product_not_found.html')
+
     return redirect('products')
 
 
@@ -534,15 +707,21 @@ def editcategory(request, category_id):
             category = Category.objects.get(id=category_id)
         except Category.DoesNotExist:
             return render(request, 'category_not_found.html')
-
+        
         context = {'category': category}
         return render(request, 'edit_category.html', context)
     else:
-        return redirect ('admin')
+        return redirect('admin')
 
 
-@cache_control(no_cache=True,must_revalidate=True,no_store=True)
-@never_cache  
+def is_valid_image(file):
+    allowed_formats = ['jpeg', 'jpg', 'png']
+    return file.name.lower().endswith(tuple(allowed_formats))
+
+
+
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+@never_cache
 def update_category(request, id):
     try:
         category = Category.objects.get(id=id)
@@ -551,20 +730,50 @@ def update_category(request, id):
 
     if request.method == 'POST':
         category_name = request.POST.get('category_name')
-        if category_name:
-            category.category_name           =  category_name
-        category.description                 =  request.POST.get('description')
-        image                                =  request.FILES.get('image')
-        category.category_offer_description  =  request.POST.get('offer_details')
-        category.category_offer              =  request.POST.get('offer_price')
+        description = request.POST.get('description')
+        image = request.FILES.get('image')
+        offer_price = request.FILES.get('offer_price')
+
+
+        if image:
+            allowed_formats = ['image/jpeg', 'image/jpg', 'image/png']
+            if image.content_type not in allowed_formats:
+                context = {'category': category, 'error_message': 'Only JPG, JPEG, and PNG format images are allowed.'}
+                return render(request, 'edit_category.html', context)
+        
+     
+        if Category.objects.exclude(id=category.id).filter(category_name=category_name).exists():
+            context = {'category': category, 'error_message': 'Category with this name already exists.'}
+            return render(request, 'edit_category.html', context)
+        
+        if ' ' in category_name:
+            context = {'category': category, 'error_message': 'Enter a valid name, avoid keeping only spaces.'}
+            return render(request, 'edit_category.html', context)
+        
+        if ' ' in description:
+            context = {'category': category, 'error_message': 'Enter a valid description, avoid keeping only spaces.'}
+            return render(request, 'edit_category.html', context)
+        
+        if not offer_price:
+            context = {'category': category, 'error_message': 'Offer price cannot be empty. If not applicable, enter 0.'}
+            return render(request, 'edit_category.html', context)
+        
+        
+
+        
+        category.category_name = category_name
+        category.description = request.POST.get('description')
+        image = request.FILES.get('image')
+        category.category_offer_description = request.POST.get('offer_details')
+        category.category_offer = request.POST.get('offer_price', '')
         if image:
             category.image = image
+
         category.save()
         return redirect('category')
 
     context = {'category': category}
     return render(request, 'edit_category.html', context)
-
 
 
 
@@ -602,3 +811,5 @@ def block_customer(request, customer_id):
     customer.is_active = False
     customer.save()
     return redirect('customer')
+
+

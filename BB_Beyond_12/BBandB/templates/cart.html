@@ -69,7 +69,7 @@
         <div class="row align-items-center py-3 px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a href="{% url 'home' %}" class="text-decoration-none">
-                    <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span>Batter,Butter&Beyond</h5>
+                    <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span></h5>
                 </a>
                 </a>
             </div>
@@ -215,7 +215,7 @@
                         <tr>
                             <th colspan="2">Products</th>
                             <th>Price</th>
-                            <th>Discount %</th>
+                            <th>Discount</th>
                             <th>Quantity</th>
                             <th>Total</th>
                             <th>Remove</th>
@@ -233,7 +233,8 @@
                             </td>
                             
                             <!-- for DISCOUNTED price column -->
-                            <td class="align-middle"> 
+                            <td class="align-middle" style="max-width: 80px;"> 
+                            
                                 {% if cart_item.product.category.category_offer %}
                                     ₹{{ cart_item.product.category.category_offer }}%  
 
@@ -245,7 +246,7 @@
                             </td>
 
                             <td>
-                                <div class="input-group mb-3" style="max-width: 120px;">
+                                <div class="input-group mb-2" style="max-width: 140px;">
                                     <div class="input-group-prepend">
                                         <button onclick="updateQuantity('{{ cart_item.product.id }}', 'decrease')" class="btn btn-outline-primary js-btn-minus" type="button">&minus;</button>
                                     </div>

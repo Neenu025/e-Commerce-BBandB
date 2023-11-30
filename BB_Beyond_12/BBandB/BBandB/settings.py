@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,6 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'APP1',
     'SHOPPER',
+    'banner',
+    'REPORT',
     'social_django',
     'userauth',
     
@@ -128,13 +131,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-import os
-STATIC_URL = 'static/'
+
+
+
+# new
+
+STATIC_URL = '/static/'
+STATIC_ROOT = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR,'static')
 ]
 
-STATIC_ROOT = os.path.join(BASE_DIR,'assets')
+
 MEDIA_URL ='/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 
@@ -152,11 +160,14 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'
+LOGIN_REDIRECT_URL = 'welcome'
 LOGOUT_URL = 'logout'
 LOGOUT_REDIRECT_URL = 'login'
 
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '973096973713-25ntbr5rkidu8k22j8su2ke576s6jvrc.apps.googleusercontent.com'
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
+
+
+
 

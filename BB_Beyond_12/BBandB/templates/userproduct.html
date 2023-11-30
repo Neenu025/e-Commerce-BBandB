@@ -99,11 +99,11 @@
         <div class="row align-items-center py-3 px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a href="{% url 'home' %}" class="text-decoration-none">
-                    <h5 class="m-0 display-5 font-weight-semi-bold"><span class="text-success font-weight-bold border px-3 mr-1"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 20%; height: 20%;" alt="Image"></span>Batter,Butter&Beyond</h5>
+                    <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span></h5>
                 </a>
             </div>
             <div class="col-lg-6 col-6 text-left">
-                <form method="get" action="#">
+                <form method="get" action="{% url 'search' %}">
                     <div class="input-group">
                         <label for="search-input" class="sr-only">Search for products</label>
                         <input type="text" id="search-input" class="form-control" name="q" placeholder="Search for products">
@@ -144,7 +144,7 @@
 
 
     <!-- Navbar Start -->
-    <div class="container-fluid">
+    <!-- <div class="container-fluid">
         <div class="row border-top px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a class="btn shadow-none d-flex align-items-center justify-content-between bg-primary text-white w-100" data-toggle="collapse" href="#navbar-vertical" style="height: 65px; margin-top: -1px; padding: 0 30px;">
@@ -161,7 +161,7 @@
                     </div>
                 </nav>
                 {% endfor %}
-            </div>
+            </div> -->
             <!-- <div class="col-lg-3 d-none d-lg-block">
                 <a class="btn shadow-none d-flex align-items-center justify-content-between bg-primary text-white w-100" data-toggle="collapse" href="#navbar-vertical" style="height: 65px; margin-top: -1px; padding: 0 30px;">
                     <h6 class="m-0">Categories</h6>
@@ -180,14 +180,15 @@
             </div> -->
             <div class="col-lg-9">
                 <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-0">
-                    <a href="" class="text-decoration-none d-block d-lg-none">
-                        <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span>Batter,Butter&Beyond</h5>
+                    <a href="{% url 'welcome' %}" class="text-decoration-none d-block d-lg-none">
+                        <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span></h5>
                 </a>
                     </a>
                     <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
                         <span class="navbar-toggler-icon"></span>
                     </button>
-                    <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
+                    
+                    <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse"  style="padding-left: 35px;">
                         <div class="navbar-nav mr-auto py-0">
                             <a href="{% url 'home' %}" class="nav-item nav-link">Home</a>
                             <a href="{% url 'userproduct' %}" class="nav-item nav-link active">Shop</a>
@@ -198,8 +199,8 @@
                         <div class="navbar-nav ml-auto py-0">
                             {% if request.user.is_authenticated %}
                             
-                            <a href="{% url 'logout' %}" class="nav-item nav-link">Logout</a>
-                            
+                            <a href="{% url 'logout' %}" class="nav-item nav-link" >Logout</a>
+                             
                             {% else %}
                             <a href="{% url 'login' %}" class="nav-item nav-link">Login</a>
                             <a href="{% url 'signup' %}" class="nav-item nav-link">Register</a>
@@ -213,14 +214,36 @@
     <!-- Navbar End -->
 
 
+
+
+
+    <div class="container-fluid">
+        <div class="row border-top px-xl-5">
+            <div class="col-lg-3 d-none d-lg-block">
+                <a class="btn shadow-none d-flex align-items-center justify-content-between bg-primary text-white w-100" data-toggle="collapse" href="#navbar-vertical" style="height: 65px; margin-top: -1px; padding: 0 30px;">
+                    <h6 class="m-0">Categories</h6>
+                    <i class="fa fa-angle-down text-dark"></i>
+                </a>
+                {% for category in categories %}
+                <nav class="collapse show navbar navbar-vertical navbar-light align-items-start p-0 border border-top-0 border-bottom-0" id="navbar-vertical">
+                    <div class="navbar-nav w-100 overflow-hidden">
+
+                        <a href="{% url 'userproduct' %}?category={{category.category_name}}" class="nav-item nav-link">{{category.category_name}}</a>
+                       
+                        
+                    </div>
+                </nav>
+                {% endfor %}
+            </div>
+            
     <!-- Page Header Start -->
-    <div class="container-fluid bg-secondary mb-5">
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 150px">
+    <!-- <div class="container-fluid bg-secondary mb-5"> -->
+        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 50px">
             <h1 class="font-weight-semi-bold text-uppercase mb-3">Our Products</h1>
             <div class="d-inline-flex">
-                <p class="m-0"><a href="">Home</a></p>
+                <!-- <p class="m-0"><a href="{% url 'home' %}">Home</a></p>
                 <p class="m-0 px-2">-</p>
-                <p class="m-0">Shop</p>
+                <p class="m-0">Shop</p> -->
             </div>
         </div>
     </div>

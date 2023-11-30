@@ -64,7 +64,7 @@
         <div class="row align-items-center py-3 px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a href="{% url 'home' %}" class="text-decoration-none">
-                    <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span>Batter,Butter&Beyond</h5>
+                    <h5 class="m-0 display-5 font-weight-semi-bold"><img src="{% static 'home/img/mainlogo.png' %}" style="width: 30%; height: 30%;" alt="Image"></span></h5>
                 </a>
             </div>
             <div class="col-lg-6 col-6 text-left">
@@ -185,7 +185,7 @@
                 <table class="table table-bordered text-center mb-0">
                     <thead class="bg-secondary text-dark">
                         <tr>
-                            <th>Products</th>
+                            <th colspan="2">Products</th>
                             <th>Price</th>
                             <th>Action</th>
                             <th>Remove</th>
@@ -195,7 +195,9 @@
                     <tbody class="align-middle">
                         {% for wishlist_item in wishlist_items %}
                         <tr>
-                            <td class="align-middle"><img src="{{ wishlist_item.product.image.url }}" alt="" style="width: 50px;"> {{ wishlist_item.product.product_name }}</td>
+                            <td class="align-left"><img src="{{ wishlist_item.product.image.url }}" alt="" style="width: 65px;"></td>
+                            <td class="align-middle">{{ wishlist_item.product.product_name }}</td>
+                            
                             <td class="align-middle">
                                 {% if wishlist_item.product.category.category_offer %}
                                     ₹{{ wishlist_item.product.price}} -{{wishlist_item.product.category.category_offer }}%

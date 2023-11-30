@@ -68,7 +68,7 @@
                     </div>
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                            <img class="rounded-circle me-lg-2" src="{% static 'admin/img/adm.png ' %}" alt="" style="width: 40px; height: 40px;">
+                            <img class="rounded-circle me-lg-2" src="{% static 'admin/img/adm.png' %}" alt="" style="width: 40px; height: 40px;">
                             <span class="d-none d-lg-inline-flex">Neenu</span>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
@@ -79,7 +79,106 @@
                     </div>
                 </div>
             </nav>
+            <!-- Navbar End -->
+        
 
+            <!-- chart start -->
+            <div class="mt-4">
+                <canvas id="myChart"></canvas>
+            </div>
+            <div class="mt-5"> <h2>Order Report</h2> </div>
+            <div class="row mb-3">
+                <form action="{% url 'report_pdf_order' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label" for="from-date">From:</label>
+                        <div class="col-sm-3">
+                            <input type="date" class="form-control" id="from-date" name="from_date">
+                        </div>
+                    </div> 
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label" for="to-date">To:</label>
+                        <div class="col-sm-3">
+                            <input type="date" class="form-control" id="to-date" name="to_date">
+                        </div>
+                    </div> 
+                    <button class="btn btn-primary ml-2" type="submit">Generate Report</button>
+                </form>
+                <div class="card-body p-4">
+                    {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-success">{{ message }}</div>
+                    {% endfor %}
+                    {% endif %} 
+                </div>
+            </div>
+            
+            <div>
+                <canvas id="myChart"></canvas>
+            </div>
+            
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            
+            <script>
+                const labels = JSON.parse(`{{ labels|safe }}`);
+                const data = JSON.parse(`{{ data|safe }}`);
+            
+                const ctx = document.getElementById('myChart');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Order Amounts',
+                            data: data,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            </script>
+            
+        
+
+         
+        
+
+
+        
+
+
+    
+
+
+            <!-- Footer Start -->
+            <!-- <div class="container-fluid pt-4 px-4">
+                <div class="bg-light rounded-top p-4">
+                    <div class="row">
+                        <div class="col-12 col-sm-6 text-center text-sm-start">
+                            &copy; <a href="#">plantorium</a>, All Right Reserved. 
+                        </div>
+                        <div class="col-12 col-sm-6 text-center text-sm-end"> -->
+                            <!--/*** This template is free as long as you keep the footer author’s credit link/attribution link/backlink. If you'd like to use the template without the footer author’s credit link/attribution link/backlink, you can purchase the Credit Removal License from "https://htmlcodex.com/credit-removal". Thank you for your support. ***/-->
+                            <!-- Designed By <a href="https://htmlcodex.com">afif</a>
+                        </br>
+                        Distributed By <a class="border-bottom" href="https://themewagon.com" target="_blank">plantorium</a>
+                        </div>
+                    </div>
+                </div>
+            </div> --> 
+            <!-- Footer End
+        </div>
+         Content End -->
+
+
+        <!-- Back to Top -->
+        <!-- <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a> -->
     </div>
 
     <!-- JavaScript Libraries -->
